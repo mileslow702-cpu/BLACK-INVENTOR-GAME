@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>BLUEPRINT Game Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&amp;family=Saira+Stencil+One&amp;display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: full-bleed 3D view. Every piece of UI is drawn like an engineering sheet laid over it:
+     hairline frames, stencil lettering, a title block in the corner. One world, one theme. */
+  --sheet:#0e3a8c; --sheet-deep:#061a47; --line:#dce9ff; --line-dim:rgba(220,233,255,.42);
+  --seal:#f4b731; --ink:#ff5468; --paper:#f1e8d4; --paper-ink:#1b2440;
+  --display:"Saira Stencil One",Impact,"Arial Black",sans-serif;
+  --body:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{height:100%;margin:0}
+body{background:var(--sheet-deep);color:var(--line);font:400 14px/1.5 var(--body);overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#view{position:fixed;inset:0;width:100%;height:100%;display:block;image-rendering:crisp-edges;image-rendering:pixelated;z-index:0}
+
+/* HUD */
+.hud{position:fixed;z-index:2;pointer-events:none}
+body:not(.playing) .hud{display:none !important}
+.tag{border:1px solid var(--line-dim);background:rgba(6,26,71,.78);padding:6px 10px;font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+#sealTag{top:12px;left:12px;display:flex;gap:8px;align-items:center;font-variant-numeric:tabular-nums}
+.sealdot{width:14px;height:14px;border-radius:50%;background:var(--seal);box-shadow:inset 0 0 0 2px #a8770f}
+#missionTag{top:12px;right:12px;font-variant-numeric:tabular-nums}
+#missionTag.done{color:var(--sheet-deep);background:var(--seal);border-color:var(--seal)}
+#moveTag{left:12px;bottom:12px;color:var(--seal);opacity:0;transition:opacity .2s}
+#moveTag.on{opacity:1}
+#hint{left:50%;bottom:12px;transform:translateX(-50%);width:max-content;max-width:min(620px,calc(100% - 32px));text-align:center;text-transform:none;letter-spacing:.02em;font-weight:400;font-size:13px}
+#toast{top:17%;left:16px;right:16px;text-align:center;font:400 clamp(24px,5vw,46px)/1.05 var(--display);color:var(--seal);text-shadow:0 3px 0 var(--sheet-deep);opacity:0;transition:opacity .25s;text-wrap:balance}
+#toast.on{opacity:1}
+#intro{left:16px;right:16px;top:30%;text-align:center;opacity:0;transition:opacity .5s}
+#intro.on{opacity:1}
+#intro .eyebrow{color:var(--seal)}
+#intro h2{font:400 clamp(30px,7vw,72px)/.95 var(--display);margin:6px 0 10px;text-shadow:0 4px 0 var(--sheet-deep);text-wrap:balance}
+#intro p{margin:0}
+#intro .mission{display:inline-block;margin-top:10px}
+#fade{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s;z-index:4}
+#fade.on{opacity:1}
+.eyebrow{margin:0;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+
+/* Touch controls */
+#touch{display:none;position:fixed;inset:0;z-index:3;pointer-events:none}
+body.touch.playing #touch{display:block}
+#stickZone{position:absolute;left:0;bottom:0;width:46%;height:62%;pointer-events:auto;touch-action:none}
+#stickBase{position:fixed;left:30px;bottom:30px;width:110px;height:110px;border:1px dashed var(--line-dim);border-radius:50%;background:rgba(6,26,71,.35)}
+#stickKnob{position:absolute;left:32px;top:32px;width:46px;height:46px;border-radius:50%;background:var(--line);opacity:.85}
+.tb{position:absolute;pointer-events:auto;touch-action:none;border:1px solid var(--line);background:rgba(6,26,71,.55);color:var(--line);font:600 11px/1 var(--body);letter-spacing:.08em;border-radius:50%;padding:0}
+.tb.down{background:var(--seal);color:var(--sheet-deep);border-color:var(--seal)}
+#bJump{right:22px;bottom:30px;width:86px;height:86px;font-size:13px}
+#bCrouch{right:120px;bottom:22px;width:68px;height:68px}
+#bDive{right:36px;bottom:128px;width:68px;height:68px}
+#bPause{right:12px;top:52px;width:40px;height:40px}
+body.touch #hint{bottom:auto;top:52px;max-width:calc(100% - 120px)}
+body.touch #moveTag{bottom:auto;top:52px;left:12px;display:none}
+
+/* Sheets: title, pause, story card */
+.sheet{position:fixed;inset:0;z-index:5;overflow:auto;touch-action:pan-y;padding:clamp(16px,4vw,44px);
+  background:
+    linear-gradient(rgba(220,233,255,.10) 1px,transparent 1px) 0 0/100% 32px,
+    linear-gradient(90deg,rgba(220,233,255,.10) 1px,transparent 1px) 0 0/32px 100%,
+    linear-gradient(180deg,rgba(14,58,140,.80),rgba(6,26,71,.93))}
+#title{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);grid-template-rows:1fr auto;gap:24px clamp(20px,4vw,56px);align-items:start}
+#title.off{display:none}
+.t-head{display:flex;flex-direction:column;gap:14px;align-items:flex-start;min-width:0}
+.t-head .eyebrow{color:var(--seal)}
+h1{margin:0;font:400 clamp(54px,12.5vw,170px)/.86 var(--display);letter-spacing:.01em;color:var(--line);text-shadow:0 6px 0 var(--sheet-deep)}
+.dim{display:flex;align-items:center;gap:10px;width:min(100%,560px);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--line-dim)}
+.dim::before,.dim::after{content:"";flex:1;height:9px;border:solid var(--line-dim);border-width:0 1px;background:linear-gradient(var(--line-dim),var(--line-dim)) 0 50%/100% 1px no-repeat}
+.lede{margin:0;max-width:46ch;font-size:15px}
+.btn{font:400 20px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--line);background:transparent;border:1px solid var(--line);padding:14px 26px;cursor:pointer}
+.btn:hover{background:rgba(220,233,255,.12)}
+.btn.primary{background:var(--seal);border-color:var(--seal);color:var(--sheet-deep);box-shadow:5px 5px 0 var(--sheet-deep)}
+.btn.primary:hover{background:#ffd062}
+.btn:focus-visible{outline:2px solid var(--line);outline-offset:4px}
+.controls{border:1px solid var(--line-dim);background:rgba(6,26,71,.6);padding:16px 18px;min-width:0}
+.controls h2{margin:0 0 8px;font:400 18px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--seal)}
+.controls h2:not(:first-child){margin-top:16px}
+.controls dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 14px;font-size:12.5px}
+.controls dt{font-weight:600;white-space:nowrap}
+.controls dd{margin:0;color:var(--line)}
+.controls .phone{display:none;margin:0 0 10px;font-size:12.5px}
+body.touch .controls .phone{display:block}
+kbd{font:600 11px/1 var(--body);border:1px solid var(--line-dim);padding:2px 5px;margin-right:3px;display:inline-block}
+.titleblock{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--line-dim);background:rgba(6,26,71,.6)}
+.titleblock div{padding:8px 12px;border-right:1px solid var(--line-dim);min-width:0}
+.titleblock div:last-child{border-right:0}
+.titleblock small{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--line-dim)}
+.titleblock b{font-weight:600;font-size:13px}
+.stamp{display:inline-block;color:var(--ink);border:2px solid var(--ink);padding:0 6px;transform:rotate(-4deg);font-family:var(--display);font-weight:400;letter-spacing:.08em}
+#help,#card{display:none;place-items:center}
+#help.on,#card.on{display:grid}
+#help .panel{width:min(100%,520px);display:flex;flex-direction:column;gap:14px}
+#help h2.big{margin:0;font:400 40px/1 var(--display);text-shadow:0 4px 0 var(--sheet-deep)}
+.row{display:flex;flex-wrap:wrap;gap:12px}
+.paper{position:relative;width:min(100%,560px);background:var(--paper);color:var(--paper-ink);padding:clamp(20px,5vw,36px);box-shadow:10px 10px 0 var(--sheet-deep);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.paper .eyebrow{color:#9a6a00}
+.paper h2{margin:0;font:400 clamp(34px,8vw,58px)/.95 var(--display);padding-right:84px}
+.paper .years{margin:0;font-weight:600;font-size:12.5px;letter-spacing:.04em}
+.paper p{margin:0;max-width:60ch}
+.paper .btn{margin-top:8px;color:var(--paper-ink);border-color:var(--paper-ink)}
+.paper .btn.primary{color:var(--sheet-deep);border-color:var(--seal);box-shadow:5px 5px 0 var(--paper-ink)}
+.paper .btn:focus-visible{outline-color:var(--paper-ink)}
+.sealbig{position:absolute;right:22px;top:22px;width:68px;height:68px;border-radius:50%;background:var(--seal);box-shadow:inset 0 0 0 5px #c48a12,inset 0 0 0 7px var(--seal),inset 0 0 0 9px #c48a12;display:grid;place-items:center;font:400 30px/1 var(--display);color:#7a5200}
+#loadErr{position:fixed;inset:auto 16px 16px 16px;z-index:9;margin:0;padding:12px 14px;background:var(--paper);color:var(--paper-ink);border-left:6px solid var(--ink)}
+@media (max-width:760px){
+  #title{grid-template-columns:minmax(0,1fr);grid-template-rows:auto}
+  .titleblock{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .titleblock div{border-bottom:1px solid var(--line-dim)}
+}
+@media (prefers-reduced-motion:reduce){#toast,#intro,#fade,#moveTag{transition:none}}
+
+/* build 2: health, Royalties, talk boxes, the letter */
+#hp{top:48px;left:12px;display:flex;gap:4px}
+#hp i{display:block;width:16px;height:10px;background:var(--seal);border:1px solid #a8770f}
+#hp i.off{background:transparent;border-color:var(--line-dim)}
+#coinTag{top:68px;left:12px;font-variant-numeric:tabular-nums}
+body.scene .hud{display:none !important}
+body.scene #touch{display:none !important}
+body.touch #hint{top:104px}
+#talk{display:none;position:fixed;z-index:3;left:50%;bottom:16px;transform:translateX(-50%);width:min(680px,calc(100% - 32px));border:1px solid var(--line);background:rgba(6,26,71,.93);padding:12px 16px;cursor:pointer}
+#talk.on{display:block}
+#talk .who{margin:0 0 6px;font:400 18px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--seal)}
+#talk.ghost{border-color:var(--ink)}
+#talk.ghost .who{color:var(--ink)}
+#talk .text{margin:0;min-height:3em;font-size:14px}
+#talk .next{margin:6px 0 0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--line-dim);text-align:right}
+#letter{display:none;place-items:center}
+#letter.on{display:grid}
+.paper .hand{font-size:16px}
+#select{display:none;place-items:center}
+#select.on{display:grid}
+.sellist{display:flex;flex-direction:column;gap:10px;width:100%}
+.paper .selbtn{text-align:left;font-size:18px;padding:12px 16px;color:var(--paper-ink);border-color:var(--paper-ink);background:transparent;box-shadow:none}
+.paper .selbtn.cur{background:var(--seal);border-color:var(--seal)}
+.paper .selbtn.done{opacity:.75}
+.paper .selbtn:disabled{opacity:.35;cursor:default}
+.skip{display:none;position:fixed;z-index:6;top:12px;right:12px;font-size:14px;padding:8px 14px;background:rgba(6,26,71,.8)}
+body.scene .skip{display:block}
+</style>
+</head>
+<body>
+<canvas id="view" aria-label="BLUEPRINT game view"></canvas>
+
+<div id="sealTag" class="hud tag"><span class="sealdot"></span>Seals of Record <b id="sealCount">0</b></div>
+<div id="hp" class="hud" aria-label="Health"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<div id="coinTag" class="hud tag" hidden>Royalties <b id="coinCount">0</b>/100</div>
+<div id="missionTag" class="hud tag" hidden></div>
+<div id="moveTag" class="hud tag"></div>
+<div id="toast" class="hud" role="status"></div>
+<div id="hint" class="hud tag"></div>
+<div id="intro" class="hud">
+  <p class="eyebrow" id="introEyebrow"></p>
+  <h2 id="introTitle"></h2>
+  <p class="tag mission" id="introMission"></p>
+</div>
+<div id="fade"></div>
+<div id="talk"><p class="who" id="talkWho"></p><p class="text" id="talkText"></p><p class="next">Jump or tap to continue</p></div>
+<button id="skipBtn" class="btn skip" type="button">Skip</button>
+
+<div id="touch">
+  <div id="stickZone"><div id="stickBase"><div id="stickKnob"></div></div></div>
+  <button id="bJump" class="tb" type="button">JUMP</button>
+  <button id="bCrouch" class="tb" type="button">CROUCH</button>
+  <button id="bDive" class="tb" type="button">HIT</button>
+  <button id="bPause" class="tb" type="button" aria-label="Pause">II</button>
+</div>
+
+<section id="title" class="sheet">
+  <header class="t-head">
+    <p class="eyebrow">Build 3 · worlds 1 and 2 of 9 playable</p>
+    <h1>BLUE<wbr>PRINT</h1>
+    <div class="dim">The Hall of Record</div>
+    <p class="lede">The Ghost Writer signed his name on every invention in the Hall. Jump into the paintings, travel to the moment the work was done, and put the credit back.</p>
+    <button id="startBtn" class="btn primary" type="button">Start</button>
+  </header>
+  <aside class="controls" id="controls">
+    <p class="phone">On a phone: stick on the left, buttons on the right, drag the screen to turn the camera.</p>
+    <h2>Controls</h2>
+    <dl>
+      <dt>Move</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or left stick</dd>
+      <dt>Jump</dt><dd><kbd>Space</kbd> or A button</dd>
+      <dt>Crouch</dt><dd><kbd>Shift</kbd> or a trigger</dd>
+      <dt>Hit</dt><dd><kbd>F</kbd> or X button</dd>
+      <dt>Camera</dt><dd>Arrow keys, drag, or right stick</dd>
+      <dt>Zoom</dt><dd><kbd>X</kbd> or click the right stick</dd>
+      <dt>Pause</dt><dd><kbd>P</kbd> or Start</dd>
+    </dl>
+    <h2>Moves</h2>
+    <dl>
+      <dt>Punch, punch, kick</dt><dd>Press hit up to three times</dd>
+      <dt>Dive</dt><dd>Press hit at a full run or in a running jump</dd>
+      <dt>Jump kick</dt><dd>Press hit in a standing jump</dd>
+      <dt>Stomp</dt><dd>Land on a Blot</dd>
+      <dt>Ledge grab</dt><dd>Jump at an edge just out of reach, then jump to climb</dd>
+      <dt>Triple jump</dt><dd>Run and jump three times, pressing jump as you land</dd>
+      <dt>Long jump</dt><dd>Run, hold crouch, then jump</dd>
+      <dt>Backflip</dt><dd>Stand still, hold crouch, then jump</dd>
+      <dt>Side flip</dt><dd>Run, turn straight back, then jump</dd>
+      <dt>Wall kick</dt><dd>Jump into a wall, then jump again</dd>
+      <dt>Ground pound</dt><dd>Press crouch in the air</dd>
+    </dl>
+  </aside>
+  <footer class="titleblock">
+    <div><small>Project</small><b>Blueprint</b></div>
+    <div><small>Sheet</small><b>02 of 09</b></div>
+    <div><small>Scale</small><b>1:64</b></div>
+    <div><small>Drawn by</small><b>Nova</b></div>
+    <div><small>Credit</small><b class="stamp">Stolen</b></div>
+  </footer>
+</section>
+
+<section id="letter" class="sheet" role="dialog" aria-labelledby="letterHead">
+  <div class="paper">
+    <p class="eyebrow" id="letterHead">Hand delivered · The Hall of Record</p>
+    <p class="hand">Nova,</p>
+    <p class="hand">Your name goes on the wall tonight. Come to the Hall of Record. The doors are open.</p>
+    <p class="hand">The Curator</p>
+    <button id="letterBtn" class="btn primary" type="button">Go to the Hall</button>
+  </div>
+</section>
+
+<section id="select" class="sheet" role="dialog" aria-labelledby="selName">
+  <div class="paper">
+    <p class="eyebrow" id="selWorld"></p>
+    <h2 id="selName"></h2>
+    <p>Three seals hold the glass. Pick one to break.</p>
+    <div id="selList" class="sellist"></div>
+    <p class="years">Arrow keys or stick to choose, jump to go, P to step back.</p>
+  </div>
+</section>
+
+<section id="help" class="sheet" role="dialog" aria-label="Paused">
+  <div class="panel">
+    <h2 class="big">Paused</h2>
+    <div class="row">
+      <button id="resumeBtn" class="btn primary" type="button">Resume</button>
+      <button id="hallBtn" class="btn" type="button">Back to the Hall</button>
+    </div>
+    <div class="controls" id="helpControls"></div>
+  </div>
+</section>
+
+<section id="card" class="sheet" role="dialog" aria-labelledby="cardName">
+  <div class="paper">
+    <div class="sealbig" aria-hidden="true" id="cardNum">1</div>
+    <p class="eyebrow" id="cardEyebrow">Seal of Record restored</p>
+    <h2 id="cardName"></h2>
+    <p class="years" id="cardYears"></p>
+    <p id="cardP1"></p>
+    <p id="cardP2"></p>
+    <button id="cardBtn" class="btn primary" type="button">Back to the Hall</button>
+  </div>
+</section>
+
+<p id="loadErr" hidden>The 3D library did not load. Check your connection and reload the page.</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/core.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/player.js"></script>
+<script src="js/things.js"></script>
+<script src="js/cases.js"></script>
+<script src="js/hall.js"></script>
+<script src="js/world1.js"></script>
+<script src="js/world1b.js"></script>
+<script src="js/world2.js"></script>
+<script src="js/world1m.js"></script>
+<script src="js/world2m.js"></script>
+<script src="js/move.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
