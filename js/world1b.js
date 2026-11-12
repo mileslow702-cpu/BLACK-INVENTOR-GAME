@@ -27,5 +27,5 @@ Object.assign(planet,{key:'w1',hitTop:Infinity,things:{coins:[],blots:[]},coinCo
   trail(pl.stations[2].dir,pl.towerDir,14);
 
   [off(pl.stations[0].dir,6,1),off(pl.stations[1].dir,5.5,2),off(pl.stations[2].dir,5.5,4),off(pl.towerDir,8.5,0.5),off(pl.towerDir,8.5,3.6)]
-    .forEach(d=>{ const gy=top(d); addBlot(pl,new V3().copy(v).setLength(gy)); });
+    .forEach((d,i)=>{ const gy=top(d); addBlot(pl,new V3().copy(v).setLength(gy),i>=3?'trooper':'drip'); });
 })();

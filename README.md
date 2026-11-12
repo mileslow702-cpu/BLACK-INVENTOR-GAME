@@ -12,3 +12,6 @@ Plain HTML and JavaScript with three.js r128 from a CDN, no build step. Deploy t
 - `js/world2*.js`: World 2, Sound Check (James E. West)
 - `js/cases.js`: inventors, glass cases, seals
 - `js/game.js`: flow, cutscenes, saves
+
+- `models/*.js`: the Higgsfield 3D models (Nova, the Curator, the Ghost Writer, the Blot Trooper) wrapped as script files
+- `art/*.glb`: the same models as plain GLB files, for editing

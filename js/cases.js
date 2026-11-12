@@ -25,6 +25,9 @@ const MISSIONS={
   w1:['Bring GPS back online','Map the true shape','Race the satellite'],
   w2:['Turn the mic back on','Find the lost frequencies','The live show']
 };
+const CURATOR_TIPS=['Each painting holds three seals. Melt all three and the glass breaks.',
+  'A Blot Trooper splatters when you hit it. Hit the puddle again before it stands back up.',
+  'Every name you free makes this Hall a little brighter.'];
 function sealsFor(key){ return (save.seals[key+'m1']?1:0)+(save.seals[key+'m2']?1:0)+(save.seals[key+'m3']?1:0); }
 
 const statueM=lam(0xf3efe6);

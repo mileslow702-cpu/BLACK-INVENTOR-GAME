@@ -60,8 +60,10 @@ function playIntro(){
     {letter:true},
     {fn(){ sfx.door(); }},
     {cam:{p0:[0,9.5,-21],l0:[0,3,10],p1:[0,5,6],l1:[0,2,25],dur:4.2}},
-    {cam:{p1:[-3,4.6,9.5],l1:[-16,6.2,6],dur:1.6}},
+    {fn(){ ghostG.visible=true; }},
+    {cam:{p1:[0,4.4,-15.5],l1:[0,3.4,-27],dur:1.8}},
     {talk:['The Ghost Writer','History belongs to whoever signs it. And I signed all of it.','ghost'],sfx:sfx.laugh},
+    {fn(){ ghostG.visible=false; sfx.door(); }},
     {cam:{p1:[2.4,1.7,22.6],l1:[0,0.6,19],dur:1.4}},
     {talk:['A voice from the floor','Nova. Down here. Pick me up.']},
     {fn(){ setHint(HINT_CART); }}
@@ -69,8 +71,9 @@ function playIntro(){
 }
 function curatorScene(){
   runScene([
-    {fn(){ hub.cart.visible=false; nova.pack.visible=true; P.fwd=0; sfx.lock(); }},
-    {talk:['The Curator','I am the Curator of this Hall. He trapped me in this cartridge and painted over every name on these walls.']},
+    {fn(){ hub.cart.visible=false; nova.pack.visible=!nova.model; P.fwd=0; sfx.lock(); curatorG.visible=true; }},
+    {cam:{p0:[P.p.x+3.5,2.4,P.p.z+5.5],l0:[3.4,1.3,21],p1:[P.p.x+3,2.2,P.p.z+5],l1:[3.6,1.2,21.2],dur:0.6}},
+    {talk:['The Curator','I am the Curator of this Hall. He locked me inside that cartridge and painted over every name on these walls. What you see is only my light.']},
     {talk:['The Curator','Each painting is a door to the moment the work was done. Go in, win back the Seal of Record, and the name returns.']},
     {talk:['The Curator','Start with Dr. Gladys West. Hers is the painting still glowing. If you meet a Blot, punch it or stomp it.']},
     {fn(){ save.intro=true; persist(); setHint(hubHint()); }}
@@ -194,7 +197,7 @@ function boot(data){
     if(s.seal) save.seals.w1m1=true;                    // a save from the first build
     if(s.intro||s.seal) save.intro=true;
   }
-  nova.pack.visible=save.intro;
+  nova.pack.visible=save.intro; curatorG.visible=save.intro;
   setWorld(hub); hub.spawn(null); hub.refresh(); updateHud();
   requestAnimationFrame(frame);
 }

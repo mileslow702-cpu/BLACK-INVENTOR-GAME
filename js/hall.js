@@ -127,7 +127,7 @@ const hub=(function(){
   solid(-7,7,-22.2,-21,0.4,wood); solid(-7,7,-23.4,-22.2,0.8,wood); solid(-7,7,-24.6,-23.4,1.2,wood); solid(-7,7,-HZ,-24.6,1.6,carpetRed);
 
   // a White-Out leak on the stage: three Blots to practise on
-  addBlot(w,new V3(-3,1.6,-27.5)); addBlot(w,new V3(3,1.6,-27.5)); addBlot(w,new V3(0,1.6,-26));
+  addBlot(w,new V3(-3,1.6,-27.5)); addBlot(w,new V3(3,1.6,-27.5)); addBlot(w,new V3(0,1.6,-26),'trooper');
 
   let next=null;
   return Object.assign(w,{
@@ -168,6 +168,7 @@ const hub=(function(){
     },
     logic(){
       if(!save.intro){ if(cart.visible&&Math.hypot(P.p.x-cart.position.x,P.p.z-cart.position.z)<1.4&&P.p.y<1.5) curatorScene(); return; }
+      if(inp.divePressed&&curatorG.visible&&Math.hypot(P.p.x-curatorG.position.x,P.p.z-curatorG.position.z)<2.6){ runScene(CURATOR_TIPS.map(t=>({talk:['The Curator',t]}))); return; }
       if(inp.divePressed) for(const s of slots){ if(s.done&&Math.hypot(P.p.x-s.cpos.x,P.p.z-s.cpos.z)<2.6&&P.p.y<1){ talkTo(s.key); return; } }
       if(P.p.y<5.2){
         for(const s of slots){

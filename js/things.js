@@ -65,7 +65,12 @@ function makeBoxWorld(o){
 const coinGeo=flat(new T.CylinderGeometry(0.36,0.36,0.08,10)); coinGeo.rotateX(Math.PI/2);
 const coinM=lam(0xf4b731,{emissive:0x3a2600});
 const blotGeo=flat(new T.IcosahedronGeometry(0.6,1)), blotM=lam(0xffffff,{emissive:0x9a9a9a}), eyeM=bas(0x1b2440);
-const atk={on:false,c:new V3(),r:0};         // where Nova's current attack lands, if any
+const atk={on:false,c:new V3(),r:0};
+window.MODELS={}; const MODELS0=window.MODELS, TROOPERS=[];
+function attachTrooper(b){
+  if(!MODELS0.trooper||b.model) return;
+  b.model=MODELS0.trooper.clone(true); b.g.add(b.model); b.fallback.visible=false;
+}         // where Nova's current attack lands, if any
 const _q=new T.Quaternion(), _u2=new V3(), _n2=new V3(), _e=new V3(), _f=new V3(), wallN2=new V3();
 
 function addRoyalty(w,pos,temp){
@@ -74,13 +79,24 @@ function addRoyalty(w,pos,temp){
   const c={m:m,q:new T.Quaternion().setFromUnitVectors(Y,_u2),alive:true,temp:!!temp,ph:pos.x*1.3+pos.z*0.7+pos.y};
   m.quaternion.copy(c.q); w.things.coins.push(c); return c;
 }
-function addBlot(w,pos){
-  const g=new T.Group(), body=mesh(blotGeo,blotM,g,0,0.5,0); body.scale.set(1,0.82,1);
-  mesh(new T.BoxGeometry(0.12,0.2,0.06),eyeM,g,-0.2,0.6,0.52); mesh(new T.BoxGeometry(0.12,0.2,0.06),eyeM,g,0.2,0.6,0.52);
+// kind 'drip' (one hit pops it) or 'trooper' (a hit splatters it into a puddle that stands back up unless you hit it again)
+const puddleGeo=new T.CircleGeometry(0.9,12); puddleGeo.rotateX(-Math.PI/2);
+function addBlot(w,pos,kind){
+  const g=new T.Group(), trooper=kind==='trooper';
+  const b={g:g,home:pos.clone(),p:pos.clone(),f:new V3(0,0,1),alive:true,ph:pos.x+pos.z,kind:trooper?'trooper':'drip',puddle:0,stun:0};
+  if(trooper){
+    b.fallback=new T.Group(); g.add(b.fallback);
+    mesh(new T.BoxGeometry(0.7,1.3,0.5),blotM,b.fallback,0,0.65,0); mesh(flat(new T.IcosahedronGeometry(0.38,1)),blotM,b.fallback,0,1.6,0);
+    b.puddleM=mesh(puddleGeo,blotM,g,0,0.03,0); b.puddleM.visible=false;
+    TROOPERS.push(b); attachTrooper(b);
+  } else {
+    const body=mesh(blotGeo,blotM,g,0,0.5,0); body.scale.set(1,0.82,1);
+    mesh(new T.BoxGeometry(0.12,0.2,0.06),eyeM,g,-0.2,0.6,0.52); mesh(new T.BoxGeometry(0.12,0.2,0.06),eyeM,g,0.2,0.6,0.52);
+  }
   g.position.copy(pos); w.group.add(g);
-  const b={g:g,home:pos.clone(),p:pos.clone(),f:new V3(0,0,1),alive:true,ph:pos.x+pos.z};
   w.things.blots.push(b); return b;
 }
+function setPuddle(b,on){ b.puddle=on?4:0; b.puddleM.visible=on; (b.model||b.fallback).visible=!on; }
 function makeSeal(parent){
   const g=new T.Group(), spin=new T.Group(); g.add(spin); parent.add(g);
   mesh(flat(new T.CylinderGeometry(0.8,0.8,0.14,18)),lam(0xf4b731,{emissive:0x7a5200}),spin).rotation.x=Math.PI/2;
@@ -91,7 +107,7 @@ function makeSeal(parent){
 function resetThings(w){
   const t=w.things;
   for(let i=t.coins.length-1;i>=0;i--){ const c=t.coins[i]; if(c.temp){ w.group.remove(c.m); t.coins.splice(i,1); } else { c.alive=true; c.m.visible=true; } }
-  for(const b of t.blots){ b.alive=true; b.g.visible=true; b.p.copy(b.home); b.g.position.copy(b.home); }
+  for(const b of t.blots){ b.alive=true; b.g.visible=true; b.p.copy(b.home); b.g.position.copy(b.home); b.stun=0; if(b.kind==='trooper') setPuddle(b,false); }
   w.coinCount=0;
 }
 function popBlot(w,b){
@@ -114,6 +130,15 @@ function updateThings(dt){
   for(const b of t.blots){
     if(!b.alive) continue;
     w.up(b.p,_u2); const a=w.alt(b.p);
+    if(b.puddle>0){                                          // a splattered Trooper: finish it, or it stands back up
+      b.puddle-=dt; b.g.position.copy(b.p); _n2.copy(b.p);
+      const k=b.puddle<1?1+0.25*Math.sin(time*30):1; b.puddleM.scale.set(k,1,k);
+      if(b.puddle<3.6&&(atk.on&&atk.c.distanceTo(_n2)<atk.r+0.9)||(airborne&&P.vy<0&&_e.distanceTo(_n2)<1.3)){ popBlot(w,b); if(P.state!=='pound'&&airborne) bounce(); continue; }
+      for(const o of t.blots){ if(o!==b&&o.alive&&o.kind==='drip'&&o.stun<=0&&o.p.distanceTo(b.p)<1) { o.stun=1.6; sfx.skid(); } }   // Drips slip in it
+      if(b.puddle<=0){ setPuddle(b,false); sfx.pop(); }
+      continue;
+    }
+    if(b.stun>0){ b.stun-=dt; b.g.rotation.y+=dt*12; continue; }
     _f.copy(P.p).sub(b.p); const dist=_f.length(), away=_n2.copy(b.p).sub(b.home).length();
     let sp=0;
     if(dist<8&&away<11&&P.invuln<=0){ tangent(_f,_u2); sp=2.9; }             // chase
@@ -130,9 +155,11 @@ function updateThings(dt){
     _x.crossVectors(_u2,b.f).normalize(); _m.makeBasis(_x,_u2,b.f); b.g.quaternion.setFromRotationMatrix(_m);
     b.g.scale.set(1+hop*0.2,1-hop*0.25,1+hop*0.2);
     _n2.copy(b.p).addScaledVector(_u2,0.5);
-    if(atk.on&&atk.c.distanceTo(_n2)<atk.r+0.55){ popBlot(w,b); continue; }
-    if(_e.distanceTo(_n2)<1.2){
-      if(airborne&&P.vy<0&&w.alt(P.p)>a+0.4){ popBlot(w,b); if(P.state!=='pound') bounce(); }
+    const tr=b.kind==='trooper', reach=tr?1.3:1.2;
+    if(tr) _n2.addScaledVector(_u2,0.4);
+    if(atk.on&&atk.c.distanceTo(_n2)<atk.r+0.55+(tr?0.2:0)){ if(tr){ setPuddle(b,true); sfx.pop(); dust(5,3,b.p); } else popBlot(w,b); continue; }
+    if(_e.distanceTo(_n2)<reach){
+      if(airborne&&P.vy<0&&w.alt(P.p)>a+(tr?1.2:0.4)){ if(tr){ setPuddle(b,true); sfx.pop(); } else popBlot(w,b); if(P.state!=='pound') bounce(); }
       else hurt(b.p);
     }
   }

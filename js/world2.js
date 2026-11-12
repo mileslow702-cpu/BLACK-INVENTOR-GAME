@@ -90,7 +90,7 @@ const soundcheck=(function(){
   coin(52,6.1,-6.6); coin(52,6.1,-7.2);
 
   addBlot(w,new V3(1.5,1,3)); addBlot(w,new V3(2.5,1,-1.5)); addBlot(w,new V3(22,5,1.5));
-  addBlot(w,new V3(44.5,3,-2)); addBlot(w,new V3(44.5,3,3)); addBlot(w,new V3(50,3,6));
+  addBlot(w,new V3(44.5,3,-2),'trooper'); addBlot(w,new V3(44.5,3,3)); addBlot(w,new V3(50,3,6),'trooper');
 
   const m={gobs:3,live:false,told:false};
   function refresh(){ const tag=$('missionTag'); tag.textContent=m.live?'Mic live':'White-Out on the mic '+m.gobs; tag.classList.toggle('done',m.live); }

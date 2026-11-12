@@ -242,6 +242,7 @@ function animatePlayer(dt,t){
   P.squash=Math.max(0,P.squash-dt*5);
   const syF=sy*(1-0.28*P.squash), sxz=1+0.2*P.squash;
   b.scale.set(sxz,syF,sxz); b.position.y=y-0.82*(1-syF);
+  driveNovaBones();
 
   const feet=world.alt(P.p), gy=world.ground(P.p,feet);
   shadow.position.copy(P.p); world.setAlt(shadow.position,gy+0.04); shadow.quaternion.setFromUnitVectors(Z,up);
