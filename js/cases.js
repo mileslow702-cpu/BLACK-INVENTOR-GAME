@@ -14,16 +14,34 @@ const INV={
           'I started at Bell Labs as a summer intern while I studied physics at Temple.',
           'In 1962 Gerhard Sessler and I made the electret microphone. Most microphones made today work that way.',
           'At Bell Labs I helped start ABLE, so Black engineers would get placed and promoted fairly.']},
-  w3:{name:'Garrett Morgan',fig:{skin:0x5e3b22,top:0x5b4636,bottom:0x2b2620}},
-  w4:{name:'Lewis Latimer',fig:{skin:0x6b4428,top:0x2d2a3a,bottom:0x23212b}},
-  w5:{name:'Granville T. Woods',fig:{skin:0x4e301c,top:0x3a2d22,bottom:0x24201b}},
-  w6:{name:'Henrietta Lacks',woman:true,fig:{skin:0x6b4428,top:0x8a3b52,bottom:0x4a2a36}},
-  w7:{name:'Dr. David Blackwell',fig:{skin:0x5e3b22,top:0x3d4a5c,bottom:0x262b33}},
-  w8:{name:'Mother Viola Ford Fletcher',woman:true,fig:{skin:0x6b4428,top:0x6a4a8a,bottom:0x3e2f52}}
+  w3:{name:'Garrett A. Morgan',fig:{skin:0x5e3b22,top:0x5b4636,bottom:0x2b2620},
+    seals:['Early news reports played down his part in the rescue','He did not get proper credit for the hood because of his race','The government honored him only near the end of his life'],
+    talk:['I patented my safety hood in 1914 and showed it at safety exhibitions.','In 1916 a tunnel under Lake Erie exploded. My brother Frank and I went down in our hoods and brought men out.','After I saw a bad crash at an intersection, I patented a traffic signal in 1923. General Electric bought the rights for $40,000.','That same year as the rescue, I started a newspaper, the Cleveland Call.']},
+  w4:{name:'Lewis H. Latimer',fig:{skin:0x6b4428,top:0x2d2a3a,bottom:0x23212b},
+    seals:['His drawings went out under other men\u2019s names','The light bulb story told with one name','Paid less than the draftsman before him'],
+    talk:['I taught myself mechanical drawing while I worked as an office boy at a patent law firm.','In 1876 I drew the patent drawings for Alexander Graham Bell\u2019s telephone, working late into the night.','In 1882 I patented a better way to make carbon filaments, so electric light could last.','Edison\u2019s company hired me in 1884. I was the only Black member of the Edison Pioneers.']},
+  w5:{name:'Granville T. Woods',fig:{skin:0x4e301c,top:0x3a2d22,bottom:0x24201b},
+    seals:['Edison claimed his telegraph as his own','Taken to court twice over his own patent','Remembered as \u201cthe Black Edison\u201d instead of by his own name'],
+    talk:['I was born in Columbus, Ohio, in 1856, and learned my trade on the job.','In 1887 I patented a telegraph that let moving trains send messages, so they could avoid collisions.','Thomas Edison took me to court over it. I won, and I won again.','Then he offered me a job. I said no. I wanted to keep control of my own inventions.']},
+  w6:{name:'Henrietta Lacks',speaker:'The Curator',woman:true,fig:{skin:0x6b4428,top:0x8a3b52,bottom:0x4a2a36},
+    seals:['Cells taken without asking her','Her name cut down to four letters: HeLa','Her family kept in the dark for more than twenty years'],
+    talk:['Henrietta Lacks was a mother of five. In 1951 doctors at Johns Hopkins took cells from her tumor without asking her.','Her cells kept dividing. Scientists used them for the polio vaccine, gene mapping and COVID-19 vaccines.','In 2023, on what would have been her 103rd birthday, her family reached a settlement with a company that profited from her cells.','Her name is Henrietta Lacks. Say it whole.']},
+  w7:{name:'Dr. David Blackwell',fig:{skin:0x5e3b22,top:0x3d4a5c,bottom:0x262b33},
+    seals:['Kept out of Princeton\u2019s lectures because of his race','Turned away by Berkeley the first time','Had to write to 104 Black colleges to find work'],
+    talk:['I was born in 1919 in Centralia, Illinois, and fell in love with mathematics.','At the Institute for Advanced Study, I was kept out of Princeton\u2019s lectures because I was Black.','I wrote to 104 Black colleges looking for work. Later I became the first Black tenured professor at Berkeley.','I studied probability and game theory, and I was the first Black member of the National Academy of Sciences.']},
+  w8:{name:'Mother Viola Ford Fletcher',woman:true,fig:{skin:0x6b4428,top:0x6a4a8a,bottom:0x3e2f52},
+    seals:['For decades they called it a riot','Greenwood paved over and left out of the story','No justice from the city in her lifetime'],
+    talk:['I was seven years old, living in Greenwood with my family, when it began on May 31, 1921.','My mother woke us up and we ran. We lost everything but the clothes we had on.','At 107, I told my story to Congress.','In 2023 I wrote my memoir, so they could not bury my story.']}
 };
 const MISSIONS={
   w1:['Bring GPS back online','Map the true shape','Race the satellite'],
-  w2:['Turn the mic back on','Find the lost frequencies','The live show']
+  w2:['Turn the mic back on','Find the lost frequencies','The live show'],
+  w3:['Through the smoke','Three signals','The Smokestack'],
+  w4:['Light the street','Draw the bridge','Testify'],
+  w5:['Signal ahead','The first case','The second case'],
+  w6:['Gather the vials','Write her name','Home for her birthday'],
+  w7:['Read the odds','Collect the data','Light the chip'],
+  w8:['Uncover Greenwood Avenue','Above the flood','Her testimony']
 };
 const CURATOR_TIPS=['Each painting holds three seals. Melt all three and the glass breaks.',
   'A Blot Trooper splatters when you hit it. Hit the puddle again before it stands back up.',
@@ -89,11 +107,11 @@ function freeScene(w){
     {wait:0.4},
     {fn(){ w.case.free(); sfx.pound(); sfx.seal(); shake=0.4; dust(12,5,c); if(w.restore) w.restore(1); }},
     {wait:1.1},
-    {talk:[inv.name,inv.talk[0]]},
+    {talk:[inv.speaker||inv.name,inv.talk[0]]},
     {talk:['The Curator','Your name is back where it belongs. Come home to the Hall.']}
   ],()=>{ mode='card'; cardT=0; fullCard(w); });
 }
 function talkTo(key){
   const inv=INV[key];
-  runScene(inv.talk.map(t=>({talk:[inv.name,t]})));
+  runScene(inv.talk.map(t=>({talk:[inv.speaker||inv.name,t]})));
 }

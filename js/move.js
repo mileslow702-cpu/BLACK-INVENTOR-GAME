@@ -95,7 +95,7 @@ function updatePlayer(dt){
       const cap=P.air==='long'?14.4:MAXRUN;
       if(P.fwd>cap) P.fwd-=9*dt;
       if(P.fwd<-4.8) P.fwd+=18*dt;
-      P.vy=Math.max(-22.5,P.vy-(P.air==='long'?18:36)*dt);
+      P.vy=Math.max(-22.5*(W.grav||1),P.vy-(P.air==='long'?18:36)*dt*(W.grav||1));
       if((P.air==='jump'||P.air==='double'||P.air==='triple')&&!inp.jump&&P.vy>6) P.vy*=Math.pow(0.25,dt*30);
       if(P.air!=='long'&&P.air!=='hurt'){
         if(inp.divePressed){

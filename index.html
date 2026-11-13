@@ -134,6 +134,10 @@ body.touch #hint{top:104px}
 #letter{display:none;place-items:center}
 #letter.on{display:grid}
 .paper .hand{font-size:16px}
+#ending{display:none;place-items:center}
+#ending.on{display:grid}
+#endName{width:100%;font:600 20px/1.2 var(--body);padding:10px 12px;border:2px solid var(--paper-ink);background:#fff;color:var(--paper-ink)}
+#endName:focus-visible{outline:2px solid var(--seal);outline-offset:2px}
 #select{display:none;place-items:center}
 #select.on{display:grid}
 .sellist{display:flex;flex-direction:column;gap:10px;width:100%}
@@ -174,7 +178,7 @@ body.scene .skip{display:block}
 
 <section id="title" class="sheet">
   <header class="t-head">
-    <p class="eyebrow">Build 3 · worlds 1 and 2 of 9 playable</p>
+    <p class="eyebrow">Build 5 · all eight worlds and the finale</p>
     <h1>BLUE<wbr>PRINT</h1>
     <div class="dim">The Hall of Record</div>
     <p class="lede">The Ghost Writer signed his name on every invention in the Hall. Jump into the paintings, travel to the moment the work was done, and put the credit back.</p>
@@ -209,7 +213,7 @@ body.scene .skip{display:block}
   </aside>
   <footer class="titleblock">
     <div><small>Project</small><b>Blueprint</b></div>
-    <div><small>Sheet</small><b>02 of 09</b></div>
+    <div><small>Sheet</small><b>09 of 09</b></div>
     <div><small>Scale</small><b>1:64</b></div>
     <div><small>Drawn by</small><b>Nova</b></div>
     <div><small>Credit</small><b class="stamp">Stolen</b></div>
@@ -233,6 +237,17 @@ body.scene .skip{display:block}
     <p>Three seals hold the glass. Pick one to break.</p>
     <div id="selList" class="sellist"></div>
     <p class="years">Arrow keys or stick to choose, jump to go, P to step back.</p>
+  </div>
+</section>
+
+<section id="ending" class="sheet" role="dialog" aria-labelledby="endHead">
+  <div class="paper">
+    <p class="eyebrow">The last plaque</p>
+    <h2 id="endHead">Sign the wall</h2>
+    <p>Every name you freed is back where it belongs. This plaque was always meant for you.</p>
+    <label class="years" for="endName">Your name</label>
+    <input id="endName" type="text" maxlength="24" autocomplete="off" placeholder="Nova">
+    <button id="endBtn" class="btn primary" type="button">Put my name on the wall</button>
   </div>
 </section>
 
@@ -275,6 +290,15 @@ body.scene .skip{display:block}
 <script src="js/world2.js"></script>
 <script src="js/world1m.js"></script>
 <script src="js/world2m.js"></script>
+<script src="js/kit.js"></script>
+<script src="js/world3.js"></script>
+<script src="js/world4.js"></script>
+<script src="js/world5.js"></script>
+<script src="js/world6.js"></script>
+<script src="js/world7.js"></script>
+<script src="js/world8.js"></script>
+<script src="js/arena.js"></script>
+<script src="js/roster.js"></script>
 <script src="js/move.js"></script>
 <script src="js/game.js"></script>
 </body>

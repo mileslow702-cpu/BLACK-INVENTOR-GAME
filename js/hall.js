@@ -3,10 +3,12 @@
 const HX=16, HZ=30, HH=13;
 function hubHint(){
   if(!save.intro) return HINT_CART;
-  const a=sealsFor('w1'), b=sealsFor('w2');
-  if(a===3&&b===3) return HINT_HUB_DONE;
-  if(a+b===0) return HINT_HUB;
-  return HINT_HUB_SOME;
+  if(save.seals.final) return 'Every name is back on the wall, including yours.';
+  const f=freedCount(), gw=gwFightOpen();
+  if(gw) return 'The Ghost Writer is waiting on the stage. Walk up to him when you are ready.';
+  if(f===8) return 'Every inventor is free. The stage painting is open.';
+  if(f===0&&sealCount()===0) return HINT_HUB;
+  return f+' of 8 inventors are free. Each painting holds three seals. Press '+HIT+' next to a freed inventor to talk.';
 }
 const hub=(function(){
   const w=makeBoxWorld({floorY:0,bounds:{x0:-HX,x1:HX,z0:-HZ,z1:HZ},ceil:HH});
@@ -71,7 +73,8 @@ const hub=(function(){
     const stolen=!l2; c.fillStyle=stolen?'#5b4a2a':'#d6ad4c'; c.fillRect(0,0,W,H); c.strokeStyle=stolen?'#3a2f1a':'#7a5a14'; c.lineWidth=8; c.strokeRect(4,4,W-8,H-8);
     c.textAlign='center'; c.textBaseline='middle';
     if(stolen){ c.fillStyle='#ff5468'; c.font='bold 54px Georgia, serif'; c.fillText(l1,W/2,H/2+2); }
-    else { c.fillStyle='#1b1405'; c.font='bold 50px Georgia, serif'; c.fillText(l1,W/2,46); c.font='26px Georgia, serif'; c.fillText(l2,W/2,94); }
+    else { c.fillStyle='#1b1405'; let f=50; c.font='bold '+f+'px Georgia, serif'; while(c.measureText(l1).width>470&&f>24){ f-=2; c.font='bold '+f+'px Georgia, serif'; } c.fillText(l1,W/2,46);
+      f=26; c.font=f+'px Georgia, serif'; while(c.measureText(l2).width>480&&f>14){ f--; c.font=f+'px Georgia, serif'; } c.fillText(l2,W/2,94); }
   },true); }
   const stolenT=plaqueTex('CREDIT STOLEN');
 
@@ -93,7 +96,7 @@ const hub=(function(){
   }
   for(const s of slots){
     const pg=new T.Group(); pg.position.set(s.side*(HX-0.12),3.5,s.z); pg.rotation.y=-s.side*Math.PI/2; g.add(pg);
-    const seg=!!s.to;
+    const seg=true;
     s.geo=new T.PlaneGeometry(PW,PH,seg?24:1,seg?20:1);
     s.pm=bas(0xffffff,{map:lockedT}); mesh(s.geo,s.pm,pg,0,0,0.02);
     s.fm=lam(0x6b5330); frameOf(pg,PW,PH,s.fm);
@@ -108,7 +111,7 @@ const hub=(function(){
   // the last painting, on the stage at the far end
   const fg=new T.Group(); fg.position.set(0,5.5,-HZ+0.12); g.add(fg);
   mesh(new T.PlaneGeometry(9,7),bas(0xffffff,{map:lockedT}),fg,0,0,0.02); frameOf(fg,9,7,lam(0x6b5330));
-  mesh(new T.PlaneGeometry(4.4,1.1),bas(0xffffff,{map:stolenT}),fg,0,4.5,0.06);
+  const finalPlaque=mesh(new T.PlaneGeometry(4.4,1.1),bas(0xffffff,{map:stolenT}),fg,0,4.5,0.06);
 
   const arrow=mesh(new T.ConeGeometry(0.55,1.1,4),bas(0xf4b731),g,-HX+1.7,8.9,6); arrow.rotation.x=Math.PI;
   const glow=new T.PointLight(0xffd98a,0.9,18); glow.position.set(-HX+3.5,4,6); g.add(glow);
@@ -131,10 +134,12 @@ const hub=(function(){
 
   let next=null;
   return Object.assign(w,{
-    name:'hub', bg:new T.Color(0x140e0a), amb:0.7, sun:0.45, slots:slots, cart:cart,
+    name:'hub', bg:new T.Color(0x140e0a), amb:0.7, sun:0.45, slots:slots, cart:cart, plaqueTex:plaqueTex,
+    setFinalName(n){ finalPlaque.material.map=plaqueTex(n.toUpperCase(),'Their name belongs on the wall too'); finalPlaque.material.needsUpdate=true; },
     spawn(s){
       P.fwd=P.side=P.vy=0; P.state='ground'; P.lastAir=null;
-      if(s){ P.p.set(s.side*(HX-3.4),0,s.z); P.face.set(-s.side,0,0); cam.fwd.set(s.side,0,0); cam.pitch=0.2; cam.dist=10; }
+      if(s&&s.side===0){ P.p.set(0,1.6,-21); P.face.set(0,0,1); cam.fwd.set(0,0,1); cam.pitch=0.3; cam.dist=9; }
+      else if(s){ P.p.set(s.side*(HX-3.4),0,s.z); P.face.set(-s.side,0,0); cam.fwd.set(s.side,0,0); cam.pitch=0.2; cam.dist=10; }
       else { P.p.set(0,0,25); P.face.set(0,0,-1); cam.fwd.set(0,0,-1); cam.pitch=0.36; cam.dist=8.5; }
       resetThings(w); setHint(hubHint());
     },
@@ -143,7 +148,7 @@ const hub=(function(){
     refresh(){
       const n=sealCount(); next=null;
       for(const s of slots){
-        s.open=!!s.to&&n>=s.need; s.done=sealsFor(s.key)===3;
+        s.open=!!s.to&&(n>=s.need||ALLW); s.done=sealsFor(s.key)===3;
         s.case.set(sealsFor(s.key)); if(s.done) s.case.free(); else s.case.lock();
         s.pm.map=s.open?s.art:lockedT; s.pm.needsUpdate=true;
         s.fm.color.setHex(s.open?0xf4b731:0x6b5330); s.fm.emissive.setHex(s.open?0x4a3300:0x000000);
@@ -153,6 +158,7 @@ const hub=(function(){
       arrow.visible=glow.visible=!!next;
       if(next){ arrow.position.x=next.side*(HX-1.7); arrow.position.z=next.z; glow.position.set(next.side*(HX-3.5),4,next.z); }
       cart.visible=!save.intro;
+      if(typeof ghostG!=='undefined') ghostG.visible=save.intro&&!!gwFightOpen();
     },
     ripple(s){ s.rip=1; s.rx=s.side*(P.p.z-s.z); s.ry=clamp(P.p.y+0.8-3.5,-2.4,2.4); },
     animate(dt,t){
@@ -179,7 +185,11 @@ const hub=(function(){
           else flashHint('The Ghost Writer signed this one. That world is not built yet.');
           return;
         }
-        if(P.p.z<-HZ+0.62&&Math.abs(P.p.x)<4.2) flashHint('The last painting stays locked until every name is back on the wall.');
+        if(P.p.z<-HZ+0.62&&Math.abs(P.p.x)<4.2){
+          if((freedCount()===8&&save.seals.gw1&&save.seals.gw2)||ALLW){ startArena('final'); return; }
+          flashHint('The stage painting opens when all eight inventors are free and the Ghost Writer has run twice.');
+        }
+        const gw=gwFightOpen(); if(gw&&ghostG.visible&&Math.hypot(P.p.x-ghostG.position.x,P.p.z-ghostG.position.z)<2.8&&P.p.y>1){ startArena(gw); return; }
       }
     }
   });

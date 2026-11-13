@@ -5,7 +5,7 @@ function setWorld(w){
   if(world) world.group.visible=false;
   world=w; w.group.visible=true; scene.background=w.bg; stars.visible=!!w.stars; amb.intensity=w.amb; sun.intensity=w.sun;
   if(!w.stars){ sun.position.set(8,20,12); sun.target.position.set(0,0,0); }
-  $('missionTag').hidden=!w.mission; updateHud();
+  $('missionTag').hidden=!(w.key||w.showTag); updateHud();
 }
 
 /* ---------- talk boxes and cutscenes ---------- */
@@ -76,7 +76,7 @@ function curatorScene(){
     {talk:['The Curator','I am the Curator of this Hall. He locked me inside that cartridge and painted over every name on these walls. What you see is only my light.']},
     {talk:['The Curator','Each painting is a door to the moment the work was done. Go in, win back the Seal of Record, and the name returns.']},
     {talk:['The Curator','Start with Dr. Gladys West. Hers is the painting still glowing. If you meet a Blot, punch it or stomp it.']},
-    {fn(){ save.intro=true; persist(); setHint(hubHint()); }}
+    {fn(){ save.intro=true; persist(); hub.refresh(); setHint(hubHint()); }}
   ]);
 }
 
@@ -149,6 +149,8 @@ function setPause(on){
 }
 $('startBtn').addEventListener('click',startGame);
 $('cardBtn').addEventListener('click',closeCard);
+$('endBtn').addEventListener('click',finishEnding);
+$('endName').addEventListener('keydown',e=>{ if(e.key==='Enter') finishEnding(); e.stopPropagation(); });
 $('resumeBtn').addEventListener('click',()=>setPause(false));
 $('hallBtn').addEventListener('click',()=>{ if(mode!=='pause') return; $('help').classList.remove('on'); leaveForHall(); });
 $('bPause').addEventListener('click',()=>setPause(true));
@@ -180,7 +182,7 @@ function tick(dt){
 }
 
 // test hooks: lets a script drive the game one frame at a time
-const BP=window.BP={chooseMission:chooseMission,sealsFor:sealsFor,P:P,inp:inp,cam:cam,tick:tick,hub:hub,planet:planet,soundcheck:soundcheck,save:save,atk:atk,manual:false,
+const BP=window.BP={arena:arena,startArena:startArena,caution:caution,lightsOn:lightsOn,thirdRail:thirdRail,immortal:immortal,blackwell:blackwell,greenwood:greenwood,chooseMission:chooseMission,sealsFor:sealsFor,P:P,inp:inp,cam:cam,tick:tick,hub:hub,planet:planet,soundcheck:soundcheck,save:save,atk:atk,manual:false,
   get mode(){return mode;},get world(){return world.name;},get w(){return world;},get sc(){return sc;}};
 let last=0;
 function frame(now){
@@ -196,11 +198,12 @@ function boot(data){
     if(s.seals) Object.assign(save.seals,s.seals);
     if(s.seal) save.seals.w1m1=true;                    // a save from the first build
     if(s.intro||s.seal) save.intro=true;
+    if(s.name) save.name=s.name;
   }
-  nova.pack.visible=save.intro; curatorG.visible=save.intro;
+  nova.pack.visible=save.intro; curatorG.visible=save.intro; if(s&&s.name){ save.name=s.name; hub.setFinalName(s.name); }
   setWorld(hub); hub.spawn(null); hub.refresh(); updateHud();
   requestAnimationFrame(frame);
 }
 const hot=window.claude&&window.claude.hot;
-if(hot&&hot.snapshot) hot.snapshot(()=>({seals:save.seals,intro:save.intro}));
+if(hot&&hot.snapshot) hot.snapshot(()=>({seals:save.seals,intro:save.intro,name:save.name}));
 if(hot&&hot.ready) hot.ready(boot); else boot((hot&&hot.data)||{});

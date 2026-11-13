@@ -23,7 +23,7 @@
     const meter=mesh(new T.BoxGeometry(1.4,0.18,0.06),bas(0x2ec4b6),g,p[0],5.6,p[1]);
     return {c:new V3(p[0],4.1,p[1]),lvl:1,meter:meter,bg:meterBg};
   });
-  const SHOW=40;
+  const SHOW=25;
   const ms={notes:0,ready:false,showOn:false,showT:SHOW,beatT:0};
 
   sw.restore=function(k){ const c=new T.Color(0x8a8a8a).lerp(new T.Color(0xffffff),k); sw.foam.forEach(m=>m.color.copy(c)); };
@@ -65,8 +65,8 @@
       ms.showT-=dt; ms.beatT-=dt; if(ms.beatT<=0){ sfx.beat(); ms.beatT=4; }
       if(((ms.showT+dt)|0)!==(ms.showT|0)) tag();
       for(const s of show){
-        s.lvl-=dt/7.5;
-        if(atk.on&&atk.c.distanceTo(s.c)<atk.r+1.1&&s.lvl<0.9){ s.lvl=1; sfx.ring([392,494,587],0.6); }
+        s.lvl-=dt/12;
+        if(atk.on&&atk.c.distanceTo(s.c)<atk.r+1.1&&s.lvl<0.97){ s.lvl=1; sfx.ring([392,494,587],0.6); }
         s.meter.scale.x=Math.max(0.01,s.lvl); s.meter.position.x=s.c.x-0.7*(1-Math.max(0.01,s.lvl));
         s.meter.material.color.setHex(s.lvl<0.3?0xff5468:0x2ec4b6);
         if(s.lvl<=0){ ms.showOn=false; showMeters(false); sfx.hurt(); toast('The sound cut out. Starting over.'); tag(); return; }
